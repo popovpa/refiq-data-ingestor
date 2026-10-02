@@ -1,19 +1,51 @@
 spring:
   main:
-    web-application-type: reactive
+    web-application-type: servlet
   application:
     name: data-ingestor
   lifecycle:
     timeout-per-shutdown-phase: 30s
 server:
-  port: 9091
+  port: -1
   shutdown: graceful
 management:
+  server:
+    port: ${data-ingest.monitoring.port}
   endpoints:
     web:
       base-path: /metrics
       exposure:
         include: health,info,prometheus
+  endpoint:
+    prometheus:
+      access: read-only
   metrics:
     tags:
       application: ${spring.application.name}
+
+data-ingest:
+  source:
+    topic: clickstream-events
+    type: clickstream
+    group-id: data-ingest-clickstream
+  kafka:
+    bootstrap-servers: localhost:9092
+    max-poll-interval: 5m
+  batch:
+    max-records: 5000
+    max-bytes: 5242880
+    max-wait: 500ms
+    poll-timeout: 100ms
+  retry:
+    initial-backoff: 200ms
+    max-backoff: 5s
+  monitoring:
+    port: 9091
+  storage:
+    clickhouse:
+      url: http://localhost:8123
+      database: refiq
+      username: refiq
+      password: "refiq"
+      table: clickstream_events
+      request-timeout: 30s
