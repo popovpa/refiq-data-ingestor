@@ -1,0 +1,19 @@
+spring:
+  main:
+    web-application-type: reactive
+  application:
+    name: data-ingestor
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+server:
+  port: 9091
+  shutdown: graceful
+management:
+  endpoints:
+    web:
+      base-path: /metrics
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
