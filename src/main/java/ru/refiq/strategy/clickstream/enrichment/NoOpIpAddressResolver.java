@@ -1,10 +1,12 @@
 package ru.refiq.strategy.clickstream.enrichment;
 
 import org.springframework.stereotype.Component;
+import ru.refiq.config.ConditionalOnClickstreamPipeline;
 import ru.refiq.metrics.IngestMetrics;
 import ru.refiq.strategy.clickstream.ClickstreamAddresses;
 
 @Component
+@ConditionalOnClickstreamPipeline
 public class NoOpIpAddressResolver implements IpAddressResolver {
 
     private final IngestMetrics metrics;

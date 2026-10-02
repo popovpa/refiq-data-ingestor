@@ -1,6 +1,7 @@
 package ru.refiq.strategy.clickstream;
 
 import org.springframework.stereotype.Component;
+import ru.refiq.config.ConditionalOnClickstreamPipeline;
 import ru.refiq.error.InvalidRecordException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
@@ -13,6 +14,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 @Component
+@ConditionalOnClickstreamPipeline
 public class ClickstreamMapper {
 
     private static final Pattern SCRIPT_ID = Pattern.compile("^[a-z0-9]{5}$");

@@ -47,8 +47,8 @@ public class InfrastructureStartupTest {
                 TestIngest.properties(),
                 new IngestStrategyRegistry(List.of(strategy("clickstream"))),
                 kafkaTopicProbe,
-                clickHouseClient,
-                readiness
+                readiness,
+                List.of(new ClickHouseStorageStartupValidator(clickHouseClient))
         );
     }
 

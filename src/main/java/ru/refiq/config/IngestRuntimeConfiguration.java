@@ -16,6 +16,7 @@ public class IngestRuntimeConfiguration {
     }
 
     @Bean(destroyMethod = "close")
+    @ConditionalOnClickstreamPipeline
     public Client clickHouseInsertClient(DataIngestProperties properties) {
         DataIngestProperties.ClickHouse clickHouse = properties.getStorage().getClickhouse();
         return new Client.Builder()

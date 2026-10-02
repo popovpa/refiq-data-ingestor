@@ -1,12 +1,14 @@
 package ru.refiq.strategy.clickstream;
 
 import org.springframework.stereotype.Component;
+import ru.refiq.config.ConditionalOnClickstreamPipeline;
 import ru.refiq.error.InvalidRecordException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 @Component
+@ConditionalOnClickstreamPipeline
 public class ClickstreamValidator {
 
     static final int SUPPORTED_SCHEMA_VERSION = 1;

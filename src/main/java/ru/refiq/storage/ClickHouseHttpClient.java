@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import ru.refiq.config.ConditionalOnClickstreamPipeline;
 import ru.refiq.config.DataIngestProperties;
 import ru.refiq.error.FatalIngestException;
 import ru.refiq.error.RetryableIngestException;
@@ -19,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 @Component
+@ConditionalOnClickstreamPipeline
 public class ClickHouseHttpClient implements ClickHouseClient {
 
     private static final Logger log = LoggerFactory.getLogger(ClickHouseHttpClient.class);

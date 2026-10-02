@@ -1,6 +1,7 @@
 package ru.refiq.strategy.clickstream.enrichment;
 
 import org.springframework.stereotype.Component;
+import ru.refiq.config.ConditionalOnClickstreamPipeline;
 import ru.refiq.error.FatalIngestException;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -10,6 +11,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Replaced when a trusted upstream event id is available.
  */
 @Component
+@ConditionalOnClickstreamPipeline
 public class TimeBasedEventIdGenerator implements EventIdGenerator {
 
     private final AtomicLong sequence = new AtomicLong(System.currentTimeMillis() * 1_000L);

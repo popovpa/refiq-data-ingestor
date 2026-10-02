@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import ru.refiq.config.ConditionalOnClickstreamPipeline;
 import ru.refiq.config.DataIngestProperties;
 import ru.refiq.error.FatalIngestException;
 import ru.refiq.error.RetryableIngestException;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.CompletionException;
 
 @Component
+@ConditionalOnClickstreamPipeline
 public class ClickstreamWriter {
 
     private static final Logger log = LoggerFactory.getLogger(ClickstreamWriter.class);

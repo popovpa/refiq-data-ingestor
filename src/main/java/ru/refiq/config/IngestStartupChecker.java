@@ -5,12 +5,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 import ru.refiq.error.FatalIngestException;
-import ru.refiq.storage.ClickHouseClient;
 import ru.refiq.strategy.IngestStrategy;
 import ru.refiq.strategy.IngestStrategyRegistry;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.List;
 import java.util.regex.Pattern;
 
 @Component
@@ -22,23 +22,22 @@ public class IngestStartupChecker implements InitializingBean {
     private final DataIngestProperties properties;
     private final IngestStrategyRegistry registry;
     private final KafkaTopicProbe kafkaTopicProbe;
-    private final ClickHouseClient clickHouseClient;
     private final InfrastructureReadiness readiness;
+    private final List<IngestStorageStartupValidator> storageValidators;
     private final KafkaTopicStartupValidator kafkaTopicStartupValidator = new KafkaTopicStartupValidator();
-    private final ClickHouseStartupValidator clickHouseStartupValidator = new ClickHouseStartupValidator();
 
     public IngestStartupChecker(
             DataIngestProperties properties,
             IngestStrategyRegistry registry,
             KafkaTopicProbe kafkaTopicProbe,
-            ClickHouseClient clickHouseClient,
-            InfrastructureReadiness readiness
+            InfrastructureReadiness readiness,
+            List<IngestStorageStartupValidator> storageValidators
     ) {
         this.properties = properties;
         this.registry = registry;
         this.kafkaTopicProbe = kafkaTopicProbe;
-        this.clickHouseClient = clickHouseClient;
         this.readiness = readiness;
+        this.storageValidators = storageValidators;
     }
 
     @Override
@@ -46,7 +45,7 @@ public class IngestStartupChecker implements InitializingBean {
         validate(properties);
         IngestStrategy strategy = registry.require(properties.getSource().getType());
         kafkaTopicStartupValidator.validate(properties.getSource().getTopic(), kafkaTopicProbe);
-        clickHouseStartupValidator.validate(properties.getStorage().getClickhouse(), clickHouseClient);
+        storageValidator(properties.getSource().getType()).validate(properties);
         readiness.markReady();
         log.info(
                 "data-ingest ready topic={} type={} strategy={} groupId={} monitoringPort={}",
@@ -56,6 +55,16 @@ public class IngestStartupChecker implements InitializingBean {
                 properties.getSource().getGroupId(),
                 properties.getMonitoring().getPort()
         );
+    }
+
+    private IngestStorageStartupValidator storageValidator(String type) {
+        List<IngestStorageStartupValidator> matched = storageValidators.stream()
+                .filter(validator -> validator.supports(type))
+                .toList();
+        if (matched.size() != 1) {
+            throw new FatalIngestException("storage startup validator for type '" + type + "' must be unique");
+        }
+        return matched.getFirst();
     }
 
     public static void validate(DataIngestProperties properties) {
@@ -73,14 +82,8 @@ public class IngestStartupChecker implements InitializingBean {
             throw new FatalIngestException("batch limits must be > 0 and poll-timeout must be <= max-wait");
         }
         DataIngestProperties.Kafka kafka = properties.getKafka();
-        DataIngestProperties.ClickHouse clickHouse = properties.getStorage() == null ? null : properties.getStorage().getClickhouse();
-        if (kafka == null
-                || isBlank(kafka.getBootstrapServers())
-                || !positive(kafka.getMaxPollInterval())
-                || clickHouse == null
-                || !positive(clickHouse.getRequestTimeout())
-                || kafka.getMaxPollInterval().compareTo(clickHouse.getRequestTimeout()) <= 0) {
-            throw new FatalIngestException("kafka and clickhouse timeouts must allow a storage request to finish inside max.poll.interval");
+        if (kafka == null || isBlank(kafka.getBootstrapServers()) || !positive(kafka.getMaxPollInterval())) {
+            throw new FatalIngestException("kafka bootstrap servers and max-poll-interval must be set");
         }
         DataIngestProperties.Retry retry = properties.getRetry();
         if (retry == null
@@ -93,6 +96,22 @@ public class IngestStartupChecker implements InitializingBean {
                 || properties.getMonitoring().getPort() < 1
                 || properties.getMonitoring().getPort() > 65535) {
             throw new FatalIngestException("monitoring port must be between 1 and 65535");
+        }
+        if ("audit".equals(source.getType())) {
+            validatePostgres(properties, kafka.getMaxPollInterval());
+            return;
+        }
+        if ("clickstream".equals(source.getType())) {
+            validateClickHouse(properties, kafka.getMaxPollInterval());
+        }
+    }
+
+    static void validateClickHouse(DataIngestProperties properties, Duration maxPollInterval) {
+        DataIngestProperties.ClickHouse clickHouse = properties.getStorage() == null ? null : properties.getStorage().getClickhouse();
+        if (clickHouse == null
+                || !positive(clickHouse.getRequestTimeout())
+                || maxPollInterval.compareTo(clickHouse.getRequestTimeout()) <= 0) {
+            throw new FatalIngestException("kafka and clickhouse timeouts must allow a storage request to finish inside max.poll.interval");
         }
         if (clickHouse.getUrl() == null || clickHouse.getUsername() == null || clickHouse.getPassword() == null) {
             throw new FatalIngestException("clickhouse storage configuration is incomplete");
@@ -114,6 +133,27 @@ public class IngestStartupChecker implements InitializingBean {
         }
         if (isBlank(clickHouse.getUsername())) {
             throw new FatalIngestException("clickhouse username must be set");
+        }
+    }
+
+    static void validatePostgres(DataIngestProperties properties, Duration maxPollInterval) {
+        DataIngestProperties.Postgres postgres = properties.getStorage() == null ? null : properties.getStorage().getPostgres();
+        if (postgres == null
+                || !positive(postgres.getRequestTimeout())
+                || maxPollInterval.compareTo(postgres.getRequestTimeout()) <= 0) {
+            throw new FatalIngestException("kafka and postgres timeouts must allow a storage request to finish inside max.poll.interval");
+        }
+        if (isBlank(postgres.getUrl()) || !postgres.getUrl().startsWith("jdbc:postgresql:")) {
+            throw new FatalIngestException("postgres url must be a jdbc:postgresql endpoint");
+        }
+        if (isBlank(postgres.getUsername())) {
+            throw new FatalIngestException("postgres username must be set");
+        }
+        if (postgres.getPassword() == null) {
+            throw new FatalIngestException("postgres password must be set");
+        }
+        if (isBlank(postgres.getTable()) || !IDENTIFIER.matcher(postgres.getTable()).matches()) {
+            throw new FatalIngestException("postgres table must be an identifier");
         }
     }
 

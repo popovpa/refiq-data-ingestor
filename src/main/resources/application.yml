@@ -40,7 +40,7 @@ data-ingest:
     initial-backoff: 200ms
     max-backoff: 5s
   monitoring:
-    port: 9091
+    port: 9095
   storage:
     clickhouse:
       url: http://localhost:8123

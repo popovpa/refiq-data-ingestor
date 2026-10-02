@@ -1,12 +1,14 @@
 package ru.refiq.strategy.clickstream;
 
 import org.springframework.stereotype.Component;
+import ru.refiq.config.ConditionalOnClickstreamPipeline;
 import ru.refiq.error.InvalidRecordException;
 import tools.jackson.databind.JsonNode;
 
 import java.util.regex.Pattern;
 
 @Component
+@ConditionalOnClickstreamPipeline
 public class ExactLongClientEventIdMapper implements ClientEventIdMapper {
 
     private static final Pattern LEGACY = Pattern.compile("^[a-z0-9]{20}$");

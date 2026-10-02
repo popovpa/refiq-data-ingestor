@@ -237,9 +237,9 @@ public class DataIngestProperties {
 
     public static class Storage {
 
-        @Valid
-        @NotNull
         private ClickHouse clickhouse = new ClickHouse();
+
+        private Postgres postgres;
 
         public ClickHouse getClickhouse() {
             return clickhouse;
@@ -247,6 +247,14 @@ public class DataIngestProperties {
 
         public void setClickhouse(ClickHouse clickhouse) {
             this.clickhouse = clickhouse;
+        }
+
+        public Postgres getPostgres() {
+            return postgres;
+        }
+
+        public void setPostgres(Postgres postgres) {
+            this.postgres = postgres;
         }
     }
 
@@ -284,6 +292,59 @@ public class DataIngestProperties {
 
         public void setDatabase(String database) {
             this.database = database;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public String getTable() {
+            return table;
+        }
+
+        public void setTable(String table) {
+            this.table = table;
+        }
+
+        public Duration getRequestTimeout() {
+            return requestTimeout;
+        }
+
+        public void setRequestTimeout(Duration requestTimeout) {
+            this.requestTimeout = requestTimeout;
+        }
+    }
+
+    public static class Postgres {
+
+        private String url;
+
+        private String username;
+
+        private String password = "";
+
+        private String table = "audit_logs";
+
+        private Duration requestTimeout = Duration.ofSeconds(30);
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
         }
 
         public String getUsername() {

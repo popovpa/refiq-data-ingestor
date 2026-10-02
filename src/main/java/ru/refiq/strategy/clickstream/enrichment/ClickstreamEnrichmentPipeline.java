@@ -1,12 +1,14 @@
 package ru.refiq.strategy.clickstream.enrichment;
 
 import org.springframework.stereotype.Component;
+import ru.refiq.config.ConditionalOnClickstreamPipeline;
 import ru.refiq.error.InvalidRecordException;
 import ru.refiq.strategy.clickstream.ClickstreamEventRecord;
 
 import java.time.Clock;
 
 @Component
+@ConditionalOnClickstreamPipeline
 public class ClickstreamEnrichmentPipeline {
 
     private final Clock clock;

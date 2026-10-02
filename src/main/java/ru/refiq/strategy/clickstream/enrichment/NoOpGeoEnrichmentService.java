@@ -1,9 +1,11 @@
 package ru.refiq.strategy.clickstream.enrichment;
 
 import org.springframework.stereotype.Component;
+import ru.refiq.config.ConditionalOnClickstreamPipeline;
 import ru.refiq.metrics.IngestMetrics;
 
 @Component
+@ConditionalOnClickstreamPipeline
 public class NoOpGeoEnrichmentService implements GeoEnrichmentService {
 
     private final IngestMetrics metrics;

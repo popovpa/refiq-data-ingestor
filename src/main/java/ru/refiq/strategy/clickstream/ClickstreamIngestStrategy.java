@@ -2,6 +2,7 @@ package ru.refiq.strategy.clickstream;
 
 import tools.jackson.databind.JsonNode;
 import org.springframework.stereotype.Component;
+import ru.refiq.config.ConditionalOnClickstreamPipeline;
 import ru.refiq.batch.IngestBatch;
 import ru.refiq.batch.IngestRecord;
 import ru.refiq.error.DeadLetter;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@ConditionalOnClickstreamPipeline
 public class ClickstreamIngestStrategy implements IngestStrategy {
 
     private final ClickstreamValidator validator;

@@ -29,6 +29,22 @@ public final class TestIngest {
         return new IngestRecord("clickstream-events", 0, offset, null, value, value.length, 0L);
     }
 
+    public static DataIngestProperties auditProperties() {
+        DataIngestProperties properties = properties();
+        properties.getSource().setTopic("audit-events");
+        properties.getSource().setType("audit");
+        properties.getSource().setGroupId("data-ingest-audit");
+        properties.getStorage().setClickhouse(null);
+        DataIngestProperties.Postgres postgres = new DataIngestProperties.Postgres();
+        postgres.setUrl("jdbc:postgresql://localhost:5432/refiq");
+        postgres.setUsername("refiq");
+        postgres.setPassword("refiq");
+        postgres.setTable("audit_logs");
+        postgres.setRequestTimeout(Duration.ofSeconds(30));
+        properties.getStorage().setPostgres(postgres);
+        return properties;
+    }
+
     public static DataIngestProperties properties() {
         DataIngestProperties properties = new DataIngestProperties();
         properties.getSource().setTopic("clickstream-events");
