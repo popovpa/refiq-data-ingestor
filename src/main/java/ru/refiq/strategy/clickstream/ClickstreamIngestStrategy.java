@@ -76,7 +76,8 @@ public class ClickstreamIngestStrategy implements IngestStrategy {
             }
             metrics.eventsReceived(mapping.events().size() + mapping.errors().size());
             for (ClickstreamEventRecord event : mapping.events()) {
-                enrichment.enrich(event);
+                enrichment.enrich(event.trustedEntityContext(), event);
+                metrics.clickstreamEntityContext(event.siteId() > 0L, hasAttribution(event));
                 valid.add(event);
             }
             for (String error : mapping.errors()) {
@@ -88,6 +89,14 @@ public class ClickstreamIngestStrategy implements IngestStrategy {
         } catch (RuntimeException e) {
             throw new FatalIngestException("clickstream mapping failed", e);
         }
+    }
+
+    private static boolean hasAttribution(ClickstreamEventRecord event) {
+        return event.trackingLinkId() > 0L
+                || event.offerId() > 0L
+                || event.partnerId() > 0L
+                || event.campaignId() > 0L
+                || !event.trafficOwnership().isEmpty();
     }
 
     private void reject(IngestRecord record, List<DeadLetter> invalid, String description) {

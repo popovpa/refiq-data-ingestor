@@ -35,6 +35,9 @@ public class IngestMetrics {
     private final Counter clickhouseBatches;
     private final DistributionSummary clickhouseBatchEvents;
     private final Timer clickhouseInsert;
+    private final Counter eventsWithSiteContext;
+    private final Counter eventsWithAttributionContext;
+    private final Counter eventsWithoutAttributionContext;
     private final ConcurrentMap<String, Counter> enrichmentStubs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Counter> batches = new ConcurrentHashMap<>();
 
@@ -71,6 +74,9 @@ public class IngestMetrics {
         this.clickhouseInsert = Timer.builder("clickhouse.insert.duration")
                 .tag("type", type)
                 .register(registry);
+        this.eventsWithSiteContext = counter("clickstream.events.with.site.context");
+        this.eventsWithAttributionContext = counter("clickstream.events.with.attribution.context");
+        this.eventsWithoutAttributionContext = counter("clickstream.events.without.attribution.context");
         Gauge.builder("data.ingest.buffer.records", buffer, gauge -> gauge.records())
                 .tag("type", type)
                 .register(registry);
@@ -111,6 +117,17 @@ public class IngestMetrics {
     public void clickhouseBatch(int events) {
         clickhouseBatches.increment();
         clickhouseBatchEvents.record(events);
+    }
+
+    public void clickstreamEntityContext(boolean siteContext, boolean attributionContext) {
+        if (siteContext) {
+            eventsWithSiteContext.increment();
+        }
+        if (attributionContext) {
+            eventsWithAttributionContext.increment();
+        } else {
+            eventsWithoutAttributionContext.increment();
+        }
     }
 
     public void enrichmentStub(String component) {

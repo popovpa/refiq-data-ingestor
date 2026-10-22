@@ -149,7 +149,9 @@ CREATE TABLE IF NOT EXISTS clickstream_events
     click_client_y Int32 DEFAULT -1,
     click_page_x Int32 DEFAULT -1,
     click_page_y Int32 DEFAULT -1,
+    -- deprecated: CSS pixels relative to the DOM target; use click_target_x
     click_relative_x Float32 DEFAULT -1,
+    -- deprecated: CSS pixels relative to the DOM target; use click_target_y
     click_relative_y Float32 DEFAULT -1,
     click_button Int8 DEFAULT -1,
     click_pointer_type LowCardinality(String) DEFAULT '',
@@ -179,6 +181,7 @@ CREATE TABLE IF NOT EXISTS clickstream_events
     scroll_max_depth Float32 DEFAULT -1,
     scroll_direction LowCardinality(String) DEFAULT '',
     scroll_milestone UInt8 DEFAULT 0,
+    -- deprecated: use scroll_time_to_milestone on the scroll event whose scroll_milestone matches
     scroll_time_to_25 Int64 DEFAULT -1,
     scroll_time_to_50 Int64 DEFAULT -1,
     scroll_time_to_75 Int64 DEFAULT -1,
@@ -191,6 +194,7 @@ CREATE TABLE IF NOT EXISTS clickstream_events
     engagement_click_count UInt32 DEFAULT 0,
     engagement_scroll_count UInt32 DEFAULT 0,
     engagement_max_scroll_depth Float32 DEFAULT -1,
+    -- deprecated: snapshot cause is engagement_trigger
     engagement_exit_reason LowCardinality(String) DEFAULT '',
     form_tracking_id String DEFAULT '',
     form_element_id String DEFAULT '',
@@ -240,7 +244,35 @@ CREATE TABLE IF NOT EXISTS clickstream_events
     network_is_datacenter Int8 DEFAULT -1,
     network_proxy_type LowCardinality(String) DEFAULT '',
     custom_payload_raw String DEFAULT '',
-    custom_payload_bytes UInt32 DEFAULT 0
+    custom_payload_bytes UInt32 DEFAULT 0,
+    tab_id Int64 DEFAULT 0,
+    session_started_ts Int64 DEFAULT 0,
+    page_view_started_ts Int64 DEFAULT 0,
+    page_view_index UInt16 DEFAULT 0,
+    event_revision UInt16 DEFAULT 1,
+    event_final Int8 DEFAULT -1,
+    click_target_x Float32 DEFAULT -1,
+    click_target_y Float32 DEFAULT -1,
+    click_viewport_x_ratio Float32 DEFAULT -1,
+    click_viewport_y_ratio Float32 DEFAULT -1,
+    click_document_x_ratio Float32 DEFAULT -1,
+    click_document_y_ratio Float32 DEFAULT -1,
+    scroll_time_to_milestone Int64 DEFAULT -1,
+    engagement_trigger LowCardinality(String) DEFAULT '',
+    browser_name LowCardinality(String) DEFAULT '',
+    browser_version LowCardinality(String) DEFAULT '',
+    browser_major_version UInt16 DEFAULT 0,
+    os_name LowCardinality(String) DEFAULT '',
+    os_version LowCardinality(String) DEFAULT '',
+    device_type LowCardinality(String) DEFAULT '',
+    page_query_filtered String DEFAULT '',
+    target_href_query_filtered String DEFAULT '',
+    target_element_key String DEFAULT '',
+    target_element_type LowCardinality(String) DEFAULT '',
+    target_action_type LowCardinality(String) DEFAULT '',
+    target_semantic_role LowCardinality(String) DEFAULT '',
+    target_identity_source LowCardinality(String) DEFAULT '',
+    target_form_id String DEFAULT ''
 )
 ENGINE = MergeTree
 PARTITION BY toYYYYMM(

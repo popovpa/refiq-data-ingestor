@@ -1,5 +1,7 @@
 package ru.refiq.strategy.clickstream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.refiq.error.InvalidRecordException;
 import tools.jackson.databind.JsonNode;
 
@@ -7,6 +9,17 @@ import java.util.List;
 import java.util.Set;
 
 final class ClickstreamJsonBinder {
+
+    private static final Logger log = LoggerFactory.getLogger(ClickstreamJsonBinder.class);
+
+    private static final Set<ClickstreamColumn> OPTIONAL_DOM_TEXT = Set.of(
+            ClickstreamColumn.TARGET_ELEMENT_KEY,
+            ClickstreamColumn.TARGET_ELEMENT_TYPE,
+            ClickstreamColumn.TARGET_ACTION_TYPE,
+            ClickstreamColumn.TARGET_SEMANTIC_ROLE,
+            ClickstreamColumn.TARGET_IDENTITY_SOURCE,
+            ClickstreamColumn.TARGET_FORM_ID
+    );
 
     private static final Set<ClickstreamColumn> LENIENT_IDS = Set.of(
             ClickstreamColumn.VISITOR_ID,
@@ -23,14 +36,41 @@ final class ClickstreamJsonBinder {
         }
         for (ClickstreamColumn column : ClickstreamColumn.values()) {
             if (column.skipBrowserBind()) {
+                // Server-owned columns are applied later from the canonical Kafka context.
                 continue;
             }
-            JsonNode value = find(node, column);
+            JsonNode value = OPTIONAL_DOM_TEXT.contains(column) ? optionalDomValue(node, column) : find(node, column);
             if (value == null) {
+                continue;
+            }
+            if (OPTIONAL_DOM_TEXT.contains(column)) {
+                applyOptionalDom(column, value, record);
                 continue;
             }
             apply(column, value, record);
         }
+    }
+
+    private void applyOptionalDom(ClickstreamColumn column, JsonNode value, ClickstreamEventRecord record) {
+        if (!value.isTextual()) {
+            log.warn("optional clickstream field ignored field={} reason=type", column.columnName());
+            return;
+        }
+        String text = value.asText("").trim();
+        if (text.length() > column.maxChars()) {
+            throw new InvalidRecordException(column.columnName() + " is too long");
+        }
+        record.set(column, text);
+    }
+
+    private static JsonNode optionalDomValue(JsonNode node, ClickstreamColumn column) {
+        for (String name : column.aliases()) {
+            JsonNode value = node.get(name);
+            if (value != null && !value.isNull()) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private void apply(ClickstreamColumn column, JsonNode value, ClickstreamEventRecord record) {

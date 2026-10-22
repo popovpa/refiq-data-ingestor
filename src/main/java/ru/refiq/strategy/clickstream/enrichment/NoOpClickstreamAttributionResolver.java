@@ -17,6 +17,7 @@ public class NoOpClickstreamAttributionResolver implements ClickstreamAttributio
     @Override
     public ClickstreamAttribution resolve(TrustedClickstreamContext context) {
         metrics.enrichmentStub("attribution");
+        // Copies the trusted Kafka context. Null means the field was not supplied; it does not replace a value.
         if (context.siteId() == null
                 && context.businessId() == null
                 && context.partnerId() == null

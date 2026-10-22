@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 public class ClickstreamMapper {
 
     private static final Pattern SCRIPT_ID = Pattern.compile("^[a-z0-9]{5}$");
-    private static final Pattern RQCID = Pattern.compile("^[a-z0-9]{12}$");
+    private static final Pattern RQCID = Pattern.compile("^[a-z0-9]{1,128}$");
     private static final Pattern EVENT_TYPE = Pattern.compile("^[a-z0-9_]{1,64}$");
 
     private final ObjectMapper objectMapper;
@@ -75,6 +75,7 @@ public class ClickstreamMapper {
         applyRqcid(event, envelope, record);
         applyCustomPayload(event, record);
         validate(record);
+        record.setTrustedEntityContext(CanonicalKafkaEntityContext.from(event, envelope));
         return record;
     }
 

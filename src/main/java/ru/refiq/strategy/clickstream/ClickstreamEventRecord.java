@@ -1,14 +1,27 @@
 package ru.refiq.strategy.clickstream;
 
+import ru.refiq.strategy.clickstream.enrichment.TrustedClickstreamContext;
+
 /** Flat persistence row. One instance is one ClickHouse row. */
 public final class ClickstreamEventRecord {
 
     private final Object[] values = new Object[ClickstreamColumn.values().length];
+    private TrustedClickstreamContext trustedEntityContext = TrustedClickstreamContext.none();
 
     public ClickstreamEventRecord() {
         for (ClickstreamColumn column : ClickstreamColumn.values()) {
             values[column.ordinal()] = column.defaultValue();
         }
+    }
+
+    public TrustedClickstreamContext trustedEntityContext() {
+        return trustedEntityContext;
+    }
+
+    public void setTrustedEntityContext(TrustedClickstreamContext trustedEntityContext) {
+        this.trustedEntityContext = trustedEntityContext == null
+                ? TrustedClickstreamContext.none()
+                : trustedEntityContext;
     }
 
     public Object get(ClickstreamColumn column) {
