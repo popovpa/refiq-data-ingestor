@@ -24,7 +24,7 @@ public final class CanonicalKafkaEntityContext {
         return new TrustedClickstreamContext(
                 null,
                 null,
-                null,
+                ip(event, envelope),
                 null,
                 null,
                 null,
@@ -58,6 +58,18 @@ public final class CanonicalKafkaEntityContext {
             throw new InvalidRecordException(snake + " is invalid");
         }
         return number;
+    }
+
+    private static String ip(JsonNode event, JsonNode envelope) {
+        JsonNode value = topLevel(event, "ip_address", "ipAddress");
+        if (value == null && envelope != event) {
+            value = topLevel(envelope, "ip_address", "ipAddress");
+        }
+        if (value == null || !value.isTextual()) {
+            return null;
+        }
+        String text = value.asText("").trim();
+        return text.isEmpty() ? null : text;
     }
 
     private static String ownership(JsonNode event, JsonNode envelope) {

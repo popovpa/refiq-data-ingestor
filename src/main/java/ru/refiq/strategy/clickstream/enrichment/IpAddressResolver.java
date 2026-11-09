@@ -3,8 +3,8 @@ package ru.refiq.strategy.clickstream.enrichment;
 public interface IpAddressResolver {
 
     /**
-     * TODO: resolve trusted client IP using configured trusted proxy chain.
-     * Do not parse X-Forwarded-For, Forwarded or X-Real-IP here until that chain exists.
+     * Client IP already taken by the tracker from the ingress {@code X-Real-IP} header
+     * and written onto the Kafka event. This consumer has no HTTP request.
      */
     String resolve(TrustedClickstreamContext context);
 }

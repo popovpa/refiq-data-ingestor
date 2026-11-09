@@ -23,6 +23,7 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -53,6 +54,59 @@ public class ClickstreamTrustedEntityTest {
         assertThat(context.campaignId(), is(4000L));
         assertThat(context.trackingLinkId(), is(1000L));
         assertThat(context.trafficOwnership(), is("partner"));
+        assertThat(context.ipAddress(), nullValue());
+    }
+
+    @Test
+    public void serverIpFromKafkaIsStored() {
+        ClickstreamEventRecord row = ingest("""
+                {
+                  "schemaVersion": 1,
+                  "site_key": "fpxkp",
+                  "event_type": "page_view",
+                  "ip_address": "203.0.113.10"
+                }
+                """);
+
+        assertThat(row.ipAddress(), is("203.0.113.10"));
+    }
+
+    @Test
+    public void nestedAndInvalidIpStayUnspecified() {
+        ClickstreamEventRecord nested = ingest("""
+                {
+                  "schemaVersion": 1,
+                  "site_key": "fpxkp",
+                  "event_type": "page_view",
+                  "payload": {"ip_address": "203.0.113.10", "ipAddress": "203.0.113.11"}
+                }
+                """);
+        ClickstreamEventRecord invalid = ingest("""
+                {
+                  "schemaVersion": 1,
+                  "site_key": "fpxkp",
+                  "event_type": "page_view",
+                  "ip_address": "not-an-ip"
+                }
+                """);
+
+        assertThat(nested.ipAddress(), is("::"));
+        assertThat(invalid.ipAddress(), is("::"));
+    }
+
+    @Test
+    public void ipv4IsWrittenAsMappedIpv6() {
+        byte[] mapped = ClickstreamAddresses.inet6("203.0.113.10").getAddress();
+        assertThat(mapped.length, is(16));
+        assertThat(mapped[10] & 0xff, is(0xff));
+        assertThat(mapped[11] & 0xff, is(0xff));
+        assertThat(mapped[12] & 0xff, is(203));
+        assertThat(mapped[15] & 0xff, is(10));
+        assertThat(java.util.Arrays.equals(ClickstreamAddresses.inet6("").getAddress(), new byte[16]), is(true));
+
+        ClickstreamEventRecord row = new ClickstreamEventRecord();
+        row.setIpAddress("203.0.113.10");
+        ClickstreamRowBinary.encode(java.util.List.of(row));
     }
 
     @Test
